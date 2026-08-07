@@ -1,4 +1,4 @@
-# CloudSentry
+# MawinguSentry
 
 AI-driven cloud security threat detection — retargeting the hybrid ML
 architecture from [FraudDetectPro](https://github.com/TamaraChelagat/FraudDetectPro)
