@@ -22,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-#reference data mimicking a small aws account
+# Reference data mimicking a small AWS account
 
 REGIONS = ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"]
 
@@ -64,10 +64,8 @@ BENIGN_EVENTS = [
 ]
 
 
-
 # Attack scenario definitions
 # Each maps to a MITRE ATT&CK for Cloud technique so alerts can be tagged
-
 
 
 @dataclass
@@ -83,7 +81,7 @@ SCENARIOS: List[AttackScenario] = [
     AttackScenario(
         scenario_id="unusual_geo_login",
         name="Impossible travel console login",
-        mitre_technique="T1078", #
+        mitre_technique="T1078",
         mitre_name="Valid Accounts",
         description="ConsoleLogin from a foreign IP shortly after a login from the user's home region.",
     ),
@@ -119,10 +117,8 @@ SCENARIOS: List[AttackScenario] = [
 
 
 class CloudTrailEventGenerator:
-    #generating synthetic cloudtrail events for training and testing cloud security detection
+    """Generates synthetic CloudTrail events for training and testing cloud security detection."""
 
-
-    #configs approx likelihood of injecting an attack scenario into the stream of benign events
     def __init__(self, attack_ratio: float = 0.05, seed: Optional[int] = None):
         self.attack_ratio = attack_ratio
         self.event_count = 0
@@ -143,7 +139,7 @@ class CloudTrailEventGenerator:
     def _timestamp(self, offset_seconds: int = 0) -> str:
         return (datetime.now(timezone.utc) + timedelta(seconds=offset_seconds)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    #Builds shared CloudTrail structure 
+    # Builds shared CloudTrail structure
     def _base_event(self, principal: str, event_name: str, region: str, ip: str) -> Dict:
         return {
             "eventVersion": "1.08",
@@ -191,7 +187,7 @@ class CloudTrailEventGenerator:
 
     # -- attack scenarios ------------------------------------------------------
 
-    # Generates a short list of events representing one attack scenario, either specified by scenario_id or chosen randomly
+    # Generates events for one attack scenario, chosen by scenario_id or at random
     def generate_attack_sequence(self, scenario_id: Optional[str] = None) -> List[Dict]:
         """Returns a short list of events representing one attack scenario."""
         scenario = (
