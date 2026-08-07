@@ -5,6 +5,7 @@ venv/
 .env
 *.log
 data/*.jsonl
+!data/sample_1k.jsonl
 !data/.gitkeep
 models/*.pkl
 models/*.h5
