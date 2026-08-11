@@ -5,7 +5,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.data_generator import CloudTrailEventGenerator, SCENARIOS
+from app.data_generator import CloudTrailEventGenerator, SCENARIOS  # noqa: E402
 
 
 def test_benign_event_shape():
