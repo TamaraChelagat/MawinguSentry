@@ -42,7 +42,7 @@ Alert dashboard (React UI + Postgres storage)
       mapped to MITRE ATT&CK for Cloud. See
       [docs/THREAT_SCENARIOS.md](docs/THREAT_SCENARIOS.md).
 - [x] Test suite + CI (GitHub Actions runs lint + tests on every push)
-- [ ] Feature engineering pipeline
+- [x] Feature engineering pipeline
 - [ ] Hybrid detection model (retrained on security event features)
 - [ ] FastAPI service with `/predict`, `/alerts`, `/stats`, `/explain`
 - [ ] Postgres-backed alert storage
