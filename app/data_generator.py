@@ -119,8 +119,9 @@ SCENARIOS: List[AttackScenario] = [
 class CloudTrailEventGenerator:
     """Generates synthetic CloudTrail events for training and testing cloud security detection."""
 
-    def __init__(self, attack_ratio: float = 0.05, seed: Optional[int] = None):
+    def __init__(self, attack_ratio: float = 0.05, seed: Optional[int] = None, time_spread_days: int = 30):
         self.attack_ratio = attack_ratio
+        self.time_spread_days = time_spread_days
         self.event_count = 0
         self.attack_count = 0
         if seed is not None:
@@ -128,6 +129,7 @@ class CloudTrailEventGenerator:
 
         logger.info("CloudTrailEventGenerator initialized")
         logger.info(f"Attack ratio: {attack_ratio * 100:.1f}%")
+        logger.info(f"Time spread: {time_spread_days} days")
         logger.info(f"Scenarios loaded: {[s.scenario_id for s in SCENARIOS]}")
 
     # -- helpers -----------------------------------------------------------
@@ -136,15 +138,23 @@ class CloudTrailEventGenerator:
         prefix = prefix or random.choice(["41.90.", "197.232.", "10.0.", "203.0."])
         return prefix + f"{random.randint(0, 255)}.{random.randint(0, 255)}"
 
-    def _timestamp(self, offset_seconds: int = 0) -> str:
-        return (datetime.now(timezone.utc) + timedelta(seconds=offset_seconds)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    def _timestamp(self, base_time: datetime, offset_seconds: int = 0) -> str:
+        return (base_time + timedelta(seconds=offset_seconds)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def _random_base_time(self) -> datetime:
+        """Pick a random moment within the configured time spread, biased toward business hours."""
+        days_ago = random.uniform(0, self.time_spread_days)
+        anchor = datetime.now(timezone.utc) - timedelta(days=days_ago)
+        # Weight hours 7-20 more heavily so "off hours" stays a meaningful minority signal
+        hour = random.choice(list(range(7, 21)) * 3 + list(range(0, 7)) + list(range(21, 24)))
+        return anchor.replace(hour=hour, minute=random.randint(0, 59), second=random.randint(0, 59))
 
     # Builds shared CloudTrail structure
-    def _base_event(self, principal: str, event_name: str, region: str, ip: str) -> Dict:
+    def _base_event(self, principal: str, event_name: str, region: str, ip: str, base_time: datetime) -> Dict:
         return {
             "eventVersion": "1.08",
             "eventID": str(uuid.uuid4()),
-            "eventTime": self._timestamp(),
+            "eventTime": self._timestamp(base_time),
             "eventName": event_name,
             "eventSource": self._service_for_event(event_name),
             "awsRegion": region,
@@ -182,7 +192,7 @@ class CloudTrailEventGenerator:
         user = random.choice(BASELINE_USERS)
         event_name = random.choice(BENIGN_EVENTS)
         ip = self._random_ip(user["usual_ip_prefix"])
-        event = self._base_event(user["principal"], event_name, user["home_region"], ip)
+        event = self._base_event(user["principal"], event_name, user["home_region"], ip, self._random_base_time())
         return event
 
     # -- attack scenarios ------------------------------------------------------
@@ -210,17 +220,22 @@ class CloudTrailEventGenerator:
         return event
 
     def _scenario_unusual_geo_login(self, user, scenario) -> List[Dict]:
+        anchor = self._random_base_time()
         home_login = self._base_event(
-            user["principal"], "ConsoleLogin", user["home_region"], self._random_ip(user["usual_ip_prefix"])
+            user["principal"], "ConsoleLogin", user["home_region"], self._random_ip(user["usual_ip_prefix"]), anchor
         )
         foreign_ip = self._random_ip(random.choice(["185.220.", "45.155.", "91.219."]))
-        foreign_login = self._base_event(user["principal"], "ConsoleLogin", user["home_region"], foreign_ip)
-        foreign_login["eventTime"] = self._timestamp(offset_seconds=180)  # 3 min later, different continent
+        foreign_login = self._base_event(user["principal"], "ConsoleLogin", user["home_region"], foreign_ip, anchor)
+        foreign_login["eventTime"] = self._timestamp(anchor, offset_seconds=180)  # 3 min later, different continent
         return [home_login, self._tag(foreign_login, scenario)]
 
     def _scenario_privilege_escalation(self, user, scenario) -> List[Dict]:
         event = self._base_event(
-            user["principal"], "AttachUserPolicy", user["home_region"], self._random_ip(user["usual_ip_prefix"])
+            user["principal"],
+            "AttachUserPolicy",
+            user["home_region"],
+            self._random_ip(user["usual_ip_prefix"]),
+            self._random_base_time(),
         )
         event["requestParameters"] = {
             "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess",
@@ -230,7 +245,11 @@ class CloudTrailEventGenerator:
 
     def _scenario_public_bucket_exposure(self, user, scenario) -> List[Dict]:
         event = self._base_event(
-            user["principal"], "PutBucketAcl", user["home_region"], self._random_ip(user["usual_ip_prefix"])
+            user["principal"],
+            "PutBucketAcl",
+            user["home_region"],
+            self._random_ip(user["usual_ip_prefix"]),
+            self._random_base_time(),
         )
         event["requestParameters"] = {
             "bucketName": f"cloudsentry-data-{random.randint(100, 999)}",
@@ -247,16 +266,23 @@ class CloudTrailEventGenerator:
             "ListBuckets",
             "DescribeLogGroups",
         ]
+        anchor = self._random_base_time()
         events = []
         for i, name in enumerate(recon_calls):
-            e = self._base_event(user["principal"], name, user["home_region"], self._random_ip(user["usual_ip_prefix"]))
-            e["eventTime"] = self._timestamp(offset_seconds=i * 2)  # every 2 seconds -- too fast for a human
+            e = self._base_event(
+                user["principal"], name, user["home_region"], self._random_ip(user["usual_ip_prefix"]), anchor
+            )
+            e["eventTime"] = self._timestamp(anchor, offset_seconds=i * 2)  # every 2 seconds -- too fast for a human
             events.append(self._tag(e, scenario))
         return events
 
     def _scenario_cred_exfil_key_creation(self, user, scenario) -> List[Dict]:
         event = self._base_event(
-            user["principal"], "CreateAccessKey", user["home_region"], self._random_ip(user["usual_ip_prefix"])
+            user["principal"],
+            "CreateAccessKey",
+            user["home_region"],
+            self._random_ip(user["usual_ip_prefix"]),
+            self._random_base_time(),
         )
         event["requestParameters"] = {"userName": user["principal"].split("/")[-1]}
         return [self._tag(event, scenario)]
@@ -281,11 +307,14 @@ def main():
     parser = argparse.ArgumentParser(description="Generate synthetic CloudTrail-style events for CloudSentry")
     parser.add_argument("--batch-size", type=int, default=100)
     parser.add_argument("--attack-ratio", type=float, default=0.08)
+    parser.add_argument("--time-spread-days", type=int, default=30)
     parser.add_argument("--out", type=str, default="data/synthetic_events.jsonl")
     parser.add_argument("--seed", type=int, default=None)
     args = parser.parse_args()
 
-    generator = CloudTrailEventGenerator(attack_ratio=args.attack_ratio, seed=args.seed)
+    generator = CloudTrailEventGenerator(
+        attack_ratio=args.attack_ratio, seed=args.seed, time_spread_days=args.time_spread_days
+    )
     events = generator.generate_batch(size=args.batch_size)
 
     with open(args.out, "w") as f:
