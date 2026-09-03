@@ -43,7 +43,7 @@ Alert dashboard (React UI + Postgres storage)
       [docs/THREAT_SCENARIOS.md](docs/THREAT_SCENARIOS.md).
 - [x] Test suite + CI (GitHub Actions runs lint + tests on every push)
 - [x] Feature engineering pipeline
-- [ ] Hybrid detection model (retrained on security event features)
+- [x] Hybrid detection model (retrained on security event features)
 - [ ] FastAPI service with `/predict`, `/alerts`, `/stats`, `/explain`
 - [ ] Postgres-backed alert storage
 - [ ] React alert dashboard
