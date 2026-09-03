@@ -3,14 +3,15 @@ fastapi>=0.104
 uvicorn[standard]>=0.24
 pydantic>=2.4
 
-# ML (mirrors FraudDetectPro's hybrid model stack)
+# ML (adapted from FraudDetectPro's ensemble + meta-learner architecture)
 scikit-learn>=1.3
 xgboost>=2.0
 lightgbm>=4.1
-tensorflow>=2.15
+imbalanced-learn>=0.11
 shap>=0.44
 numpy>=1.26
 pandas>=2.1
+joblib>=1.3
 
 # Storage
 sqlalchemy>=2.0
