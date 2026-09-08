@@ -31,7 +31,7 @@ bottom).
 - [x] `/alerts` endpoint with Postgres persistence
 - [x] `/stats` endpoint
 - [x] `/explain` endpoint (SHAP output + MITRE tag)
-- [x] (stretch) S3-triggered Lambda or EventBridge rule for real-time ingestion
+- [ ] (stretch) S3-triggered Lambda or EventBridge rule for real-time ingestion
 
 ## Week 4 — Dashboard, deploy, write-up
 - [ ] React dashboard skeleton (adapt from FraudDetectPro's `Frontend/`)
