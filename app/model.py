@@ -270,26 +270,28 @@ class CloudThreatPipeline:
         return joblib.load(filepath)
 
 
-def main():
-    import argparse
+def train_and_save(
+    events_path: str = None,
+    n_generate: int = 5000,
+    attack_ratio: float = 0.08,
+    seed: int = 2026,
+    out_path: str = "models/cloud_threat_pipeline.pkl",
+) -> Dict:
+    """Train a CloudThreatPipeline and save it. Call this from scripts/train_model.py, not by
+    running this file directly -- pickling a class defined in a script run as `python app/model.py`
+    binds it to the `__main__` module, which then fails to unpickle anywhere else (e.g. the FastAPI
+    service importing `app.model.CloudThreatPipeline`). Keeping this file import-only avoids that.
+    """
     import os
 
-    parser = argparse.ArgumentParser(description="Train the CloudThreatPipeline")
-    parser.add_argument("--events", type=str, default=None, help="Path to a JSONL events file")
-    parser.add_argument("--generate", type=int, default=5000, help="If --events not given, generate this many")
-    parser.add_argument("--attack-ratio", type=float, default=0.08)
-    parser.add_argument("--seed", type=int, default=2026)
-    parser.add_argument("--out", type=str, default="models/cloud_threat_pipeline.pkl")
-    args = parser.parse_args()
-
-    if args.events:
-        events = [json.loads(line) for line in open(args.events)]
+    if events_path:
+        events = [json.loads(line) for line in open(events_path)]
     else:
         from app.data_generator import CloudTrailEventGenerator
 
-        logger.info(f"Generating {args.generate} synthetic events (seed={args.seed})")
-        gen = CloudTrailEventGenerator(attack_ratio=args.attack_ratio, seed=args.seed, time_spread_days=30)
-        events = gen.generate_batch(size=args.generate)
+        logger.info(f"Generating {n_generate} synthetic events (seed={seed})")
+        gen = CloudTrailEventGenerator(attack_ratio=attack_ratio, seed=seed, time_spread_days=30)
+        events = gen.generate_batch(size=n_generate)
 
     pipeline = CloudThreatPipeline()
     metrics = pipeline.fit(events)
@@ -308,10 +310,7 @@ def main():
     for scenario, ratio in metrics["recall_by_scenario"].items():
         logger.info(f"  {scenario}: {ratio}")
 
-    os.makedirs(os.path.dirname(args.out), exist_ok=True)
-    pipeline.save(args.out)
-    logger.info(f"Model saved to {args.out}")
-
-
-if __name__ == "__main__":
-    main()
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    pipeline.save(out_path)
+    logger.info(f"Model saved to {out_path}")
+    return metrics
