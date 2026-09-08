@@ -55,7 +55,7 @@ Alert dashboard (React UI + Postgres storage)
 
 ## Model training 
 Model results 
-![alt text](docs/images/modelresults_train1.png)
+![alt text](docs/images/model results_train1.png)
 
 ## Quickstart
 
