@@ -24,6 +24,7 @@ train_and_save(n_generate=400, attack_ratio=0.15, seed=7, out_path=os.environ["M
 
 from fastapi.testclient import TestClient  # noqa: E402
 from app.main import app  # noqa: E402
+import pytest  # noqa: E402
 
 
 def _sample_events(n=20, attack_ratio=0.3, seed=99):
@@ -92,3 +93,53 @@ def test_stats_reflects_processed_events():
         stats = r.json()
         assert stats["total_events_processed"] >= alerts_created
         assert 0.0 <= stats["malicious_rate"] <= 1.0
+
+
+def test_explain_with_full_context_matches_predict_score():
+    """The score /explain reports for an event, given its real context, should match what
+    /predict reports for the same event scored as part of the same batch."""
+    with TestClient(app) as client:
+        events = _sample_events(n=60, attack_ratio=0.3, seed=17)
+        predict_response = client.post("/predict", json={"events": events})
+        predictions = predict_response.json()["predictions"]
+
+        target_idx = 30
+        explain_response = client.post(
+            "/explain", json={"context_events": events[: target_idx + 1], "target_index": target_idx}
+        )
+        assert explain_response.status_code == 200
+        body = explain_response.json()
+
+        assert body["score"] == pytest.approx(predictions[target_idx]["score"], abs=1e-6)
+        assert body["predicted_label"] == predictions[target_idx]["predicted_label"]
+        assert len(body["top_contributing_features"]) == 5
+        assert body["context_events_used"] == target_idx + 1
+
+
+def test_explain_rejects_empty_context():
+    with TestClient(app) as client:
+        r = client.post("/explain", json={"context_events": []})
+        assert r.status_code == 400
+
+
+def test_explain_rejects_out_of_range_target_index():
+    with TestClient(app) as client:
+        events = _sample_events(n=5, seed=8)
+        r = client.post("/explain", json={"context_events": events, "target_index": 99})
+        assert r.status_code == 400
+
+
+def test_explain_tags_known_sensitive_events_with_mitre_technique():
+    """At least one known single-event attack scenario in a reasonably sized batch should
+    come back tagged with its MITRE technique -- confirms the rule-based tagger is wired up,
+    not just present in isolation."""
+    with TestClient(app) as client:
+        events = _sample_events(n=200, attack_ratio=0.2, seed=21)
+        tagged_any = False
+        for i, event in enumerate(events):
+            if event.get("eventName") in ("AttachUserPolicy", "PutBucketAcl", "CreateAccessKey"):
+                r = client.post("/explain", json={"context_events": events[: i + 1], "target_index": i})
+                assert r.status_code == 200
+                if r.json()["mitre_technique"] is not None:
+                    tagged_any = True
+        assert tagged_any, "expected at least one sensitive-call event to be MITRE-tagged in this batch"

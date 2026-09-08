@@ -24,6 +24,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from app.database import get_alerts, get_db, get_stats, init_db, save_alert
+from app.explain import ThreatExplainer
 from app.model import CloudThreatPipeline
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -32,14 +33,16 @@ logger = logging.getLogger(__name__)
 MODEL_PATH = os.environ.get("MODEL_PATH", "models/cloud_threat_pipeline.pkl")
 
 _pipeline: Optional[CloudThreatPipeline] = None
+_explainer: Optional[ThreatExplainer] = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    global _pipeline
+    global _pipeline, _explainer
     if os.path.exists(MODEL_PATH):
         _pipeline = CloudThreatPipeline.load(MODEL_PATH)
+        _explainer = ThreatExplainer(_pipeline)
         logger.info(f"Model loaded from {MODEL_PATH}")
     else:
         logger.warning(f"No model found at {MODEL_PATH} -- /predict will return 503 until one is trained")
@@ -57,6 +60,12 @@ def get_pipeline() -> CloudThreatPipeline:
             detail=f"Model not loaded. Train one with `python scripts/train_model.py` (expected at {MODEL_PATH}).",
         )
     return _pipeline
+
+
+def get_explainer() -> ThreatExplainer:
+    if _explainer is None:
+        raise HTTPException(status_code=503, detail="Model not loaded, so no explainer is available either.")
+    return _explainer
 
 
 # -- request/response models -------------------------------------------------
@@ -105,6 +114,26 @@ class StatsResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     model_loaded: bool
+
+
+class ExplainRequest(BaseModel):
+    context_events: List[Dict]
+    target_index: int = -1
+
+
+class FeatureContribution(BaseModel):
+    feature: str
+    shap_value: float
+    feature_value: float
+
+
+class ExplainResponse(BaseModel):
+    score: float
+    predicted_label: str
+    top_contributing_features: List[FeatureContribution]
+    mitre_technique: Optional[str]
+    mitre_name: Optional[str]
+    context_events_used: int
 
 
 # -- endpoints -----------------------------------------------------------------
@@ -172,3 +201,14 @@ def list_alerts(
 @app.get("/stats", response_model=StatsResponse)
 def stats(db: Session = Depends(get_db)):
     return StatsResponse(**get_stats(db))
+
+
+@app.post("/explain", response_model=ExplainResponse)
+def explain(request: ExplainRequest, explainer: ThreatExplainer = Depends(get_explainer)):
+    if not request.context_events:
+        raise HTTPException(status_code=400, detail="context_events must not be empty")
+    try:
+        result = explainer.explain(request.context_events, target_index=request.target_index)
+    except IndexError:
+        raise HTTPException(status_code=400, detail="target_index is out of range for the given context_events")
+    return ExplainResponse(**result)
