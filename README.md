@@ -49,6 +49,14 @@ Alert dashboard (React UI + Postgres storage)
 - [ ] React alert dashboard
 - [ ] Deployment (Fargate/Lambda + Vercel)
 
+## API service docs 
+
+![alt text](image-1.png)
+
+## Model training 
+Model results 
+![alt text](image.png)
+
 ## Quickstart
 
 ```bash
@@ -62,6 +70,7 @@ python app/data_generator.py --batch-size 200 --attack-ratio 0.08 --seed 42
 # Run tests
 pytest tests/ -v
 ```
+
 
 ## Related projects
 
