@@ -10,28 +10,28 @@ bottom).
 - [x] Build `CloudTrailEventGenerator` with benign + attack event generation
 - [x] Write smoke tests for the generator
 - [x] Set up CI (lint + test on every push)
-- [ ] Generate and commit a reference dataset (`data/sample_1k.jsonl`, gitignored
+- [x] Generate and commit a reference dataset (`data/sample_1k.jsonl`, gitignored
       pattern excluded so this one is deliberate) for reproducibility
-- [ ] Write a short `docs/DATA_METHODOLOGY.md` explaining the synthetic-data
+- [x] Write a short `docs/DATA_METHODOLOGY.md` explaining the synthetic-data
       approach in interview-ready language
 
 ## Week 2 — Feature engineering & model
-- [ ] `app/features.py`: parse raw events into structured features
+- [x] `app/features.py`: parse raw events into structured features
       (event frequency per principal, source-IP entropy, time-since-last-
       similar-action, geo-velocity, permission deltas)
-- [ ] Notebook: exploratory analysis of feature distributions, benign vs
+- [x] Notebook: exploratory analysis of feature distributions, benign vs
       malicious (mirrors `notebooks/02_eda.ipynb` from FraudDetectPro)
-- [ ] `app/model.py`: adapt the NN feature extractor + ensemble architecture
-- [ ] Train on the synthetic dataset, log metrics (precision/recall/F1/ROC-AUC)
-- [ ] Wire up SHAP explainability with MITRE technique tagging
+- [x] `app/model.py`: adapt the NN feature extractor + ensemble architecture
+- [x] Train on the synthetic dataset, log metrics (precision/recall/F1/ROC-AUC)
+- [x] Wire up SHAP explainability with MITRE technique tagging
 
 ## Week 3 — Service layer
-- [ ] `app/main.py`: FastAPI app skeleton, `/health` endpoint
-- [ ] `/predict` endpoint
-- [ ] `/alerts` endpoint with Postgres persistence
-- [ ] `/stats` endpoint
-- [ ] `/explain` endpoint (SHAP output + MITRE tag)
-- [ ] (stretch) S3-triggered Lambda or EventBridge rule for real-time ingestion
+- [x] `app/main.py`: FastAPI app skeleton, `/health` endpoint
+- [x] `/predict` endpoint
+- [x] `/alerts` endpoint with Postgres persistence
+- [x] `/stats` endpoint
+- [x] `/explain` endpoint (SHAP output + MITRE tag)
+- [x] (stretch) S3-triggered Lambda or EventBridge rule for real-time ingestion
 
 ## Week 4 — Dashboard, deploy, write-up
 - [ ] React dashboard skeleton (adapt from FraudDetectPro's `Frontend/`)
