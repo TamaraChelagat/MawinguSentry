@@ -51,7 +51,7 @@ Alert dashboard (React UI + Postgres storage)
 
 ## API service docs 
 
-![alt text](image-1.png)
+![alt text](docs/images/fastAPI_docs.png)
 
 ## Model training 
 Model results 
