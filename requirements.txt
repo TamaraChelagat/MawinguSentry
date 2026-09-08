@@ -25,3 +25,4 @@ requests>=2.31
 pytest>=7.4
 black>=23.9
 flake8>=6.1
+httpx2>=2.0
