@@ -9,6 +9,7 @@ data/*.jsonl
 !data/.gitkeep
 models/*.pkl
 models/*.h5
+*.db
 .DS_Store
 .pytest_cache/
 *.egg-info/
