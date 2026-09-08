@@ -43,25 +43,3 @@ bottom).
 
 ---
 
-## Staying consistent on GitHub
-
-A few working principles, since the goal is a genuinely active-looking
-profile, not a gamed one:
-
-- **Commit at issue granularity, not day granularity.** Each checkbox above
-  is sized to be one commit. Finishing 2-3 checkboxes in a sitting still
-  means 2-3 honest, meaningful commits, not one giant one.
-- **Use Conventional Commits** (`feat:`, `fix:`, `test:`, `docs:`, `chore:`)
-  — it's a real convention used at most companies, and it makes your commit
-  log itself read like a demonstration of engineering discipline.
-- **Open a GitHub Issue for each unchecked box**, then reference it in the
-  commit that closes it (`git commit -m "feat: add feature engineering
-  pipeline (closes #4)"`). This gives you a visible Issues tab and a project
-  board you can screenshot or link in applications.
-- **Don't commit just to fill the graph.** An empty commit or a whitespace
-  change is easy to spot on a green square with no substance behind it if
-  anyone actually opens the repo — and recruiters at the companies you're
-  targeting do open repos. Real, small, frequent commits beat fake ones.
-- **CI staying green matters more than commit count.** A red X on your
-  latest commit is worse for credibility than a quiet day. Run `pytest` and
-  `flake8` locally before pushing (or let CI catch it and fix promptly).
