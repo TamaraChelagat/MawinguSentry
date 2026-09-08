@@ -5,7 +5,7 @@ real commit. Each checkbox below is a reasonable GitHub Issue and a
 reasonable commit — that's deliberate (see "Staying consistent" at the
 bottom).
 
-## Week 1 — Data & threat model ✅ mostly done
+## Week 1 — Data & threat model
 - [x] Define five attack scenarios mapped to MITRE ATT&CK
 - [x] Build `CloudTrailEventGenerator` with benign + attack event generation
 - [x] Write smoke tests for the generator
