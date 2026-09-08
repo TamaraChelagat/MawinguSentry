@@ -49,6 +49,14 @@ Alert dashboard (React UI + Postgres storage)
 - [ ] React alert dashboard
 - [ ] Deployment (Fargate/Lambda + Vercel)
 
+## API service docs 
+
+![alt text](image-1.png)
+
+## Model training 
+Model results 
+![alt text](image.png)
+
 ## Quickstart
 
 ```bash
