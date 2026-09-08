@@ -66,12 +66,9 @@ Held-out test set performance after training on 5,000 synthetic events.
 Full breakdown, including per-scenario recall and the honest recon-burst
 limitation, in [docs/MODEL_RESULTS.md](docs/MODEL_RESULTS.md).
 
-![Model training output showing ROC-AUC, precision, recall, and per-scenario recall breakdown](docs/images/model_results_train1.png)
-![alt text](docs/images/fastAPI_docs.png)
+![Model training output showing ROC-AUC, precision, recall, and per-scenario recall breakdown](docs/images/modelresults_train1.png)
 
-## Model training 
-Model results 
-![alt text](docs/images/modelresults_train1.png)
+
 
 ## Quickstart
 
